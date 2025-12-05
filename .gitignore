@@ -12,6 +12,23 @@ dist
 dist-ssr
 *.local
 
+# Backend (Python)
+venv/
+.venv/
+env/
+backend/venv/
+
+# Byte-compiled / cache
+**/__pycache__/
+**/*.py[cod]
+
+# Python env files
+.env
+.env.*
+
+# Uvicorn / Python logs
+*.log
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,6 +40,17 @@ dist-ssr
 *.sln
 *.sw?
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.turbo/
+/.pnp
+/.pnp.*
+bun.lockb
+
+# Build outputs
+build/
+out/
 # Backend (Python)
 backend/venv/
 __pycache__/
