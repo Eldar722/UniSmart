@@ -104,3 +104,5 @@ npm run dev
 Контакты
 
 email: ekainazarov1@gmail.com
+email: adelyamasanova@gmail.com
+email: lmaololakek20.a@gmail.com
