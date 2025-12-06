@@ -14,9 +14,13 @@ interface UniversityCardProps {
   university: University;
   matchScore: number;
   rank: number;
+  programId?: string;
+  onWhyClick?: (compoundId: string) => void;
+  entMismatch?: boolean;
+  unavailableReason?: string | null;
 }
 
-export function UniversityCard({ university, matchScore, rank }: UniversityCardProps) {
+export function UniversityCard({ university, matchScore, rank, programId, onWhyClick, entMismatch = false }: UniversityCardProps) {
   const { favorites, toggleFavorite } = useUser();
   const isFav = favorites.includes(university.id);
   const getMatchClass = () => {
@@ -77,9 +81,9 @@ export function UniversityCard({ university, matchScore, rank }: UniversityCardP
       <div className="p-5">
         <div className="flex flex-wrap gap-3 mb-4">
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            {university.city}
-          </div>
+              <MapPin className="h-4 w-4" />
+              {university.city}
+            </div>
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <Users className="h-4 w-4" />
             {university.studentsCount.toLocaleString()} студентов
@@ -95,16 +99,23 @@ export function UniversityCard({ university, matchScore, rank }: UniversityCardP
         </p>
 
         {/* Quick stats */}
-        <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-muted/50 rounded-xl">
+        <div className="grid grid-cols-2 gap-3 mb-4 p-3 rounded-xl" style={{ background: entMismatch ? 'rgba(255,230,230,0.6)' : undefined, border: entMismatch ? '1px solid rgba(220,38,38,0.15)' : undefined }}>
           <div>
             <p className="text-xs text-muted-foreground">Мин. ЕНТ</p>
-            <p className="font-semibold text-primary">{university.minENT}</p>
+            <p className={`font-semibold ${entMismatch ? 'text-destructive' : 'text-primary'}`}>{university.minENT}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Мин. IELTS</p>
             <p className="font-semibold text-primary">{university.minIELTS}</p>
           </div>
         </div>
+
+        {entMismatch && (
+          <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-100 text-sm text-red-800">
+            <strong>Недоступно по ЕНТ</strong>
+            <div className="text-xs text-red-700">Ваш текущий ЕНТ ниже минимального требования — вероятность поступления снижена.</div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2">
@@ -114,11 +125,25 @@ export function UniversityCard({ university, matchScore, rank }: UniversityCardP
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <Link to={`/university/${university.id}#why`}>
-            <Button variant="outline" className="px-3">
+          {onWhyClick ? (
+            <Button
+              variant="outline"
+              className="px-3"
+              onClick={() => {
+                const pid = programId || university.programs?.[0]?.id;
+                if (!pid) return;
+                onWhyClick(`${university.id}-${pid}`);
+              }}
+            >
               Почему?
             </Button>
-          </Link>
+          ) : (
+            <Link to={`/university/${university.id}#why`}>
+              <Button variant="outline" className="px-3">
+                Почему?
+              </Button>
+            </Link>
+          )}
           <Button
             variant={isFav ? "default" : "outline"}
             className="px-3"

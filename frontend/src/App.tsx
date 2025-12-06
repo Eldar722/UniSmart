@@ -9,8 +9,10 @@ import Auth from "./pages/Auth";
 import Quiz from "./pages/Quiz";
 import Recommendations from "./pages/Recommendations";
 import UniversityDetails from "./pages/UniversityDetails";
+import Roadmap from "./pages/Roadmap";
 import Compare from "./pages/Compare";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -26,8 +28,10 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/quiz" element={<Quiz />} />
             <Route path="/recommendations" element={<Recommendations />} />
+            <Route path="/roadmap" element={<Roadmap />} />
             <Route path="/university/:id" element={<UniversityDetails />} />
             <Route path="/compare" element={<Compare />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

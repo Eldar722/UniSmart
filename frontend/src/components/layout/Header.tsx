@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/UserContext";
-import { GraduationCap, Menu, X, BarChart3, Scale, LogOut, User } from "lucide-react";
+import { GraduationCap, Menu, X, BarChart3, Scale, LogOut, User, Map } from "lucide-react";
 import { useState } from "react";
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ export function Header() {
   const navLinks = [
     { href: "/recommendations", label: "Рекомендации", icon: BarChart3 },
     { href: "/compare", label: `Сравнение${comparisonList.length > 0 ? ` (${comparisonList.length})` : ""}`, icon: Scale },
+    { href: "/roadmap", label: "Roadmap", icon: Map },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -59,10 +60,13 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                    <Link to="/profile">Профиль</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={logout} className="gap-2 text-destructive">
                   <LogOut className="h-4 w-4" />
                   Выйти
-                </DropdownMenuItem>
+                </DropdownMenuItem>  
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

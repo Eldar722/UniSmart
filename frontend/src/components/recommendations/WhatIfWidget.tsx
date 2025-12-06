@@ -9,7 +9,8 @@ import { Sparkles, RefreshCw } from "lucide-react";
 import { set } from "date-fns";
 
 interface WhatIfWidgetProps {
-  onSimulate: (results: { id: string; score: number }[]) => void;
+  // теперь возвращаем симулированный профиль (или null для сброса)
+  onSimulate: (simulatedProfile: UserProfile | null) => void;
 }
 
 export function WhatIfWidget({ onSimulate }: WhatIfWidgetProps) {
@@ -35,17 +36,13 @@ export function WhatIfWidget({ onSimulate }: WhatIfWidgetProps) {
     setTimeout(() => {
       const simulatedProfile: UserProfile = {
         ...profile,
-        entScore: tempProfile.entScore || profile.entScore,
-        ieltsScore: tempProfile.ieltsScore || profile.ieltsScore,
-        budget: tempProfile.budget || profile.budget,
+        entScore: (tempProfile.entScore === "" ? profile.entScore : (tempProfile.entScore as number)),
+        ieltsScore: (tempProfile.ieltsScore === "" ? profile.ieltsScore : (tempProfile.ieltsScore as number)),
+        budget: (tempProfile.budget === "" ? profile.budget : (tempProfile.budget as number)),
       };
 
-      const results = universities.map((uni) => ({
-        id: uni.id,
-        score: calculateMatchScore(uni, simulatedProfile),
-      }));
-
-      onSimulate(results);
+      // Передаём симулированный профиль родителю — он пересчитает рекомендации
+      onSimulate(simulatedProfile);
       setIsSimulating(false);
     }, 500);
   };
@@ -58,7 +55,7 @@ export function WhatIfWidget({ onSimulate }: WhatIfWidgetProps) {
     });
 
     // очистка результатов
-    onSimulate([]);
+    onSimulate(null);
   };
 
   const handleClear = () => {
@@ -70,7 +67,7 @@ export function WhatIfWidget({ onSimulate }: WhatIfWidgetProps) {
     });
 
     // Очистка результатов симуляции в родителе
-    onSimulate([]);
+    onSimulate(null);
 
     // Очистка профиля пользователя в контексте (сброс данных квиза)
     if (typeof clearProfile === "function") {

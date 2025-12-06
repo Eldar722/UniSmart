@@ -115,3 +115,56 @@ def get_user_by_id(user_id: str) -> Optional[dict]:
                 "created_at": user["created_at"],
             }
     return None
+
+
+def save_user_favorites(user_id: str, favorites: list) -> bool:
+    """Save user favorites list"""
+    for email, user in users_db.items():
+        if user["id"] == user_id:
+            user["favorites"] = favorites
+            return True
+    return False
+
+
+def get_user_favorites(user_id: str) -> list:
+    """Get user favorites list"""
+    for email, user in users_db.items():
+        if user["id"] == user_id:
+            return user.get("favorites", [])
+    return []
+
+
+def save_user_comparison(user_id: str, comparison_list: list) -> bool:
+    """Save user comparison list"""
+    for email, user in users_db.items():
+        if user["id"] == user_id:
+            user["comparison_list"] = comparison_list
+            return True
+    return False
+
+
+def get_user_comparison(user_id: str) -> list:
+    """Get user comparison list"""
+    for email, user in users_db.items():
+        if user["id"] == user_id:
+            return user.get("comparison_list", [])
+    return []
+
+
+def save_user_profile(user_id: str, profile_data: dict) -> bool:
+    """Save user profile settings"""
+    for email, user in users_db.items():
+        if user["id"] == user_id:
+            if "profile" not in user:
+                user["profile"] = {}
+            user["profile"].update(profile_data)
+            return True
+    return False
+
+
+def get_user_profile(user_id: str) -> dict:
+    """Get user profile settings"""
+    for email, user in users_db.items():
+        if user["id"] == user_id:
+            return user.get("profile", {})
+    return {}

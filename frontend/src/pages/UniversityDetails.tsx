@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { AboutSection } from "@/components/university/AboutSection";
 import { ProgramsSection } from "@/components/university/ProgramsSection";
@@ -6,6 +6,17 @@ import { AdmissionSection } from "@/components/university/AdmissionSection";
 import { VirtualTourSection } from "@/components/university/VirtualTourSection";
 import { PartnersSection } from "@/components/university/PartnersSection";
 import { ScoreChart } from "@/components/university/ScoreChart";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Badge as UiBadge } from "@/components/ui/badge";
 import { universities, calculateMatchScore } from "@/data/mockData";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
@@ -15,7 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const UniversityDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const { profile, comparisonList, addToComparison, removeFromComparison, favorites, toggleFavorite, addToFavorites, removeFromFavorites } = useUser();
+  const { profile, comparisonList, addToComparison, removeFromComparison, favorites, toggleFavorite, addToFavorites, removeFromFavorites, token } = useUser();
   const { toast } = useToast();
   
   const university = universities.find((u) => u.id === id);
@@ -35,6 +46,44 @@ const UniversityDetails = () => {
   }
 
   const matchScore = profile ? calculateMatchScore(university, profile) : null;
+
+  const [argOpen, setArgOpen] = useState(false);
+  const [argumentation, setArgumentation] = useState<any>(null);
+  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000/api";
+
+  const location = useLocation();
+
+  const fetchArgumentation = async (compoundId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/argumentation/${compoundId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setArgumentation(data);
+    } catch (e) {
+      console.error("Argumentation fetch error:", e);
+      setArgumentation({ error: true });
+    }
+  };
+
+  // Auto-open modal when URL contains #why
+  useEffect(() => {
+    const checkHash = async () => {
+      if (location.hash && location.hash.toLowerCase().includes("#why")) {
+        const firstProgram = university.programs?.[0];
+        if (!firstProgram) return;
+        const compound = `${university.id}-${firstProgram.id}`;
+        setArgOpen(true);
+        setArgumentation(null);
+        await fetchArgumentation(compound);
+      }
+    };
+    checkHash();
+  }, [location.hash, university.id]);
 
   const navItems = [
     { id: "about", label: "О ВУЗе" },
@@ -140,39 +189,89 @@ const UniversityDetails = () => {
             <div className="sticky top-36">
               {/* Match explanation */}
               {matchScore && profile && (
-                <div id="why" className="glass-card rounded-xl p-5 mb-6">
-                  <h3 className="font-semibold mb-3">Почему этот ВУЗ?</h3>
-                  <ul className="space-y-2 text-sm">
-                    {profile.entScore >= university.minENT ? (
-                      <li className="flex items-start gap-2 text-accent-success">
-                        <span>✓</span>
-                        Ваш ЕНТ ({profile.entScore}) выше минимального ({university.minENT})
-                      </li>
-                    ) : (
-                      <li className="flex items-start gap-2 text-destructive">
-                        <span>✗</span>
-                        Ваш ЕНТ ({profile.entScore}) ниже минимального ({university.minENT})
-                      </li>
-                    )}
-                    {profile.ieltsScore >= university.minIELTS ? (
-                      <li className="flex items-start gap-2 text-accent-success">
-                        <span>✓</span>
-                        Ваш IELTS ({profile.ieltsScore}) соответствует требованиям
-                      </li>
-                    ) : profile.ieltsScore > 0 ? (
-                      <li className="flex items-start gap-2 text-destructive">
-                        <span>✗</span>
-                        Рекомендуется повысить IELTS до {university.minIELTS}
-                      </li>
-                    ) : null}
-                    {(profile.preferredCity === "Любой" || profile.preferredCity === university.city) && (
-                      <li className="flex items-start gap-2 text-accent-success">
-                        <span>✓</span>
-                        Расположен в предпочтительном городе
-                      </li>
-                    )}
-                  </ul>
-                </div>
+                <>
+                  <div id="why" className="glass-card rounded-xl p-5 mb-6">
+                    <h3 className="font-semibold mb-3">Почему этот ВУЗ?</h3>
+                    <p className="text-sm text-muted-foreground">Краткая оценка — нажмите «Почему?» в карточке рекомендаций для детализированного анализа.</p>
+                    <div className="mt-3">
+                      <Button variant="outline" size="sm" onClick={async () => {
+                        const firstProgram = university.programs?.[0];
+                        if (!firstProgram) return;
+                        const compound = `${university.id}-${firstProgram.id}`;
+                        setArgOpen(true);
+                        setArgumentation(null);
+                        await fetchArgumentation(compound);
+                      }}>Открыть детальный анализ</Button>
+                    </div>
+                  </div>
+
+                  <Dialog open={argOpen} onOpenChange={(v) => { if (!v) setArgumentation(null); setArgOpen(v); }}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Детальный анализ соответствия</DialogTitle>
+                        <DialogDescription>Структурированное объяснение, сгенерированное системой.</DialogDescription>
+                      </DialogHeader>
+
+                      <div className="space-y-4 pt-2">
+                        {!argumentation && (
+                          <p className="text-sm text-muted-foreground">Загружаем анализ…</p>
+                        )}
+
+                        {argumentation && argumentation.error && (
+                          <p className="text-sm text-destructive">Не удалось загрузить анализ.</p>
+                        )}
+
+                        {argumentation && !argumentation.error && (
+                          <div>
+                            <div className="mb-3">
+                              <h4 className="font-semibold">{argumentation.program_name} — {argumentation.university_name}</h4>
+                              <div className="flex items-center gap-3 mt-2">
+                                <UiBadge className={argumentation.score_match >= 75 ? 'bg-accent-success' : argumentation.score_match >= 50 ? 'bg-primary' : 'bg-muted'}>
+                                  {argumentation.score_match}% соответствие
+                                </UiBadge>
+                                <UiBadge>Интересы: {argumentation.interest_match}%</UiBadge>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3">
+                              <div className="p-3 bg-muted/5 rounded-lg">
+                                <p className="text-sm font-semibold mb-2">Сильные стороны</p>
+                                <ul className="list-disc pl-5 text-sm">
+                                  {argumentation.strong_points.length ? argumentation.strong_points.map((s: any, idx: number) => (
+                                    <li key={idx}>{s.title}: {s.detail}</li>
+                                  )) : <li>Нет явно выраженных сильных сторон</li>}
+                                </ul>
+                              </div>
+
+                              <div className="p-3 bg-muted/5 rounded-lg">
+                                <p className="text-sm font-semibold mb-2">Риски и компромиссы</p>
+                                <ul className="list-disc pl-5 text-sm">
+                                  {argumentation.risks.length ? argumentation.risks.map((r: any, idx: number) => (
+                                    <li key={idx}>{r.title}: {r.detail}</li>
+                                  )) : <li>Риски минимальны</li>}
+                                </ul>
+                              </div>
+
+                              <div className="p-3 bg-muted/5 rounded-lg">
+                                <p className="text-sm font-semibold mb-2">Профиль пользователя (кратко)</p>
+                                <p className="text-sm">ЕНТ: {argumentation.raw_profile.entScore} — IELTS: {argumentation.raw_profile.ieltsScore || 'не указан'} — Бюджет: {argumentation.raw_profile.budget}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <DialogFooter>
+                        <div className="flex items-center justify-between w-full">
+                          <div className="text-xs text-muted-foreground">Сформировано локально (rule-based) для демо.</div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => { setArgOpen(false); setArgumentation(null); }}>Закрыть</Button>
+                          </div>
+                        </div>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </>
               )}
 
               {/* Score chart */}

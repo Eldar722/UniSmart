@@ -1,8 +1,24 @@
+"""
+UniSmart Backend - FastAPI Application
+
+AI-powered educational navigation platform for university selection in Kazakhstan.
+The AI acts as an analytical engine that explains recommendations based on computed match scores.
+
+Architecture:
+- Business logic computes deterministic match scores
+- AI service interprets scores and generates explanations
+- Clear separation ensures transparency and explainability
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import router
+from .api.routes import router
 
-app = FastAPI()
+app = FastAPI(
+    title="UniSmart API",
+    description="AI-powered university recommendation engine for Kazakhstan",
+    version="1.0.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
